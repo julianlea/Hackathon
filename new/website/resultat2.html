@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - glTF loader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+
+	<body>
+		<script type="module">
+
+			import * as THREE from '../build/three.module.js';
+
+			import { GUI } from './jsm/utils/dat.gui.module.js';
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+			import { RGBELoader } from './jsm/loaders/RGBELoader.js';
+			import { RoughnessMipmapper } from './jsm/utils/RoughnessMipmapper.js';
+
+			var container, controls;
+			var camera, scene, renderer, gui;
+
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+				camera.position.set( - 1.8, 0.6, 2.7 );
+
+				scene = new THREE.Scene();
+
+			// Modell
+				new RGBELoader()
+					.setDataType( THREE.UnsignedByteType )
+					.setPath( 'texture/' )
+					.load( 'learner_park_1k.hdr', function ( texture ) {
+
+						var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+
+						scene.background = envMap;
+						scene.environment = envMap;
+
+						texture.dispose();
+						pmremGenerator.dispose();
+
+						render();
+
+
+
+						// use of RoughnessMipmapper is optional
+						var roughnessMipmapper = new RoughnessMipmapper( renderer );
+
+						var loader = new GLTFLoader().setPath( './assets/' );
+						loader.load( 'SimpleSkinning.gltf', function ( gltf ) {
+							gltf.scene.scale.set(0.3, 0.3, 0.3);
+							gltf.scene.rotation.x += 0.01;
+							gltf.scene.traverse( function ( child ) {
+
+								if ( child.isMesh ) {
+									child.geometry.center();
+									roughnessMipmapper.generateMipmaps( child.material );
+								}
+							} );
+
+
+							scene.add( gltf.scene );
+
+
+							roughnessMipmapper.dispose();
+
+							render();
+
+						} );
+
+
+					} );
+
+			/*	$("#Button1").click(function(e)	{
+
+			}*/
+
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.toneMapping = THREE.ACESFilmicToneMapping;
+				renderer.toneMappingExposure = 0.8;
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				container.appendChild( renderer.domElement );
+
+				var pmremGenerator = new THREE.PMREMGenerator( renderer );
+				pmremGenerator.compileEquirectangularShader();
+
+				//Controls
+		    controls = new OrbitControls(camera, renderer.domElement);
+		  	controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+		  	controls.dampingFactor = 0.1;
+
+		  	controls.screenSpacePanning = false;
+
+		  	controls.minDistance = 3;
+		  	controls.maxDistance = 100;
+
+		  	controls.maxPolarAngle = Math.PI / 2;
+
+
+
+
+			}
+
+			//GUI Interface
+			function buildGUI() {
+				var gui = new GUI( {
+					height : 5 * 32 -1,
+					/*autoPlace: false*/
+				});
+				var cam = gui.addFolder('Camera');
+
+
+				gui.domElement.id = 'gui';
+
+			}
+
+
+
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				render();
+
+			}
+
+	window.addEventListener( 'resize', onWindowResize, false );
+
+
+
+
+
+			function render() {
+				  requestAnimationFrame(render);
+					controls.update();
+
+
+				renderer.render( scene, camera );
+
+			}
+			buildGUI();
+			init();
+			render();
+
+		</script>
+		<a href="https://scheffsach.de/wt/new/website/resultat3.html"><input id=object1 type="button" onclick="setObjectOne()" value="Weiter"/></a>
+	</body>
+</html>

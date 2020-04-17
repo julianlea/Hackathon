@@ -1,7 +1,11 @@
 body{
   margin: 0;
 }
-canvas {
-  width: 90%;
-  height: 90%:
+button{
+  position: absolute;
+  display: block;
+  z-index: 99;
+  left: 50%;
+  top: 50%;
+
 }
